@@ -3,10 +3,14 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     
+    // PETE'S TEST BRANCH
+    
     // there is a run script that copies the contents of the /bin/data/ folder
     // into the /Resources/data/ folder every time we run the project
     // so we must tell oF to load from the correct folder
+    
     ofSetDataPathRoot("../Resources/data/");
+    
     
     ofSetWindowTitle("Citizen Rotation Office");
     
@@ -20,9 +24,10 @@ void ofApp::setup(){
     // load the audio
     ding.load("91926__corsica-s__ding.wav");
     
-    // V1.1 Volume of ding sound to be halved to better match video volume
+    // V2 Volume of ding sound to be halved to better match video volume
     // set ding volume
     ding.setVolume(0.5);
+
     
     // calculate the screen dimensions by calling the windowResized function
     windowResized( ofGetWidth(), ofGetHeight() );
@@ -55,6 +60,12 @@ void ofApp::setup(){
     // start playing the attractor video immediately
     playVideo(0);
     
+    // Setup comms
+    cout << "listening for osc messages on port " << PORT << "\n";
+    receiver.setup(PORT);
+    
+    // Hide the cursor
+    ofHideCursor();
 }
 
 //--------------------------------------------------------------
@@ -120,6 +131,8 @@ void ofApp::update(){
             isVisitorAnimating = false;
         }
     }
+    
+    receiveOSC();
     
 }
 
@@ -353,7 +366,7 @@ void ofApp::removeVisitor(){
         // erase the last element in the vector
         visitors.pop_back();
         
-        // V1.1 ding.play() is disabled on visitor leaving the space
+        // V2 ding.play() is disabled on visitor leaving the space
         // ding.play();
         
         // check and hide the id if everyone's left
@@ -399,6 +412,21 @@ void ofApp::windowResized(int w, int h){
         
     }
 }
+
+//--------------------------------------------------------------
+void ofApp::receiveOSC(){
+    
+    if(receiver.hasWaitingMessages()) {
+        ofxOscMessage m;
+        receiver.getNextMessage(m);
+        int num = m.getArgAsInt(0);
+        if (num < people) removeVisitor();
+        if (num > people) addVisitor();
+        people = num;
+        cout << "people = " << people << "\n";
+    }
+}
+
 
 //--------------------------------------------------------------
 void ofApp::gotMessage(ofMessage msg){
