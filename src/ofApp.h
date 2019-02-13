@@ -49,6 +49,7 @@ public:
     int videosIndex;
     int sequenceIndex;
     bool isSequencePlaying = false;
+    bool isSequenceAutomatic = false;
     
     //
     // GFX STUFF

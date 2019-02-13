@@ -55,7 +55,7 @@ void ofApp::setup(){
     }
     
     // BUT tell the attractor to play on looping
-    videos[0].setLoopState(OF_LOOP_NORMAL);
+//    videos[0].setLoopState(OF_LOOP_NORMAL);
     
     // start playing the attractor video immediately
     playVideo(0);
@@ -75,39 +75,58 @@ void ofApp::update(){
     ofSoundUpdate();
     
     // check if the video has finished
-    // the attractor doesn't trigger this because of it's loopState
-    // so it's only when normal videos stop
     if ( videos[videosIndex].getIsMovieDone() ) {
         cout << "video finished = videosIndex:" << videosIndex << ", sequenceIndex:" << sequenceIndex << endl;
         
-        // are there any more videos to play?
-        if ( sequenceIndex >= SEQUENCE_LENGTH-1 ) {
+        if (isSequencePlaying) {
+            // a video in the sequence has finished
+            // are there any more videos to play?
+            if ( sequenceIndex >= SEQUENCE_LENGTH-1 ) {
+                
+                if (numVisitorsChanged) {
+                    
+                    // start playing again
+                    
+                    // set the flag to false to record the current number of visitors
+                    numVisitorsChanged = false;
+                    
+                    // regenerate a new video sequence
+                    generateVideoSequence();
+                    
+                    // reset the index so the next video will be the first in the sequence
+                    sequenceIndex = 0;
+                    
+                    // play the first video in the sequence
+                    playVideo(sequence[sequenceIndex]);
+                    
+                    isSequenceAutomatic = false;
+                    isSequencePlaying = true;
+                }
+                else {
+                    
+                    // play the attractor
+                    playVideo(0);
+                    
+                    isSequencePlaying = false;
+                }
+        }
+        else {
+            // the attractor has finished
             
-            if (numVisitorsChanged) {
-                
-                // start playing again
-                
-                // set the flag to false to record the current number of visitors
-                numVisitorsChanged = false;
-                
-                // regenerate a new video sequence
-                generateVideoSequence();
-                
-                // reset the index so the next video will be the first in the sequence
-                sequenceIndex = 0;
-                
-                // play the first video in the sequence
-                playVideo(sequence[sequenceIndex]);
-                
-                isSequencePlaying = true;
-            }
-            else {
-                
-                // play the attractor
-                playVideo(0);
-                
-                isSequencePlaying = false;
-            }
+            // regenerate a new video sequence
+            generateVideoSequence();
+            
+            // reset the index so the next video will be the first in the sequence
+            sequenceIndex = 0;
+            
+            // play the first video in the sequence
+            playVideo(sequence[sequenceIndex]);
+            
+            isSequenceAutomatic = true;
+            isSequencePlaying = true;
+        }
+        
+        
             
         }
         else {
@@ -178,34 +197,43 @@ void ofApp::drawGFX(float x, float y, float w, float h){
     ofPushMatrix();
     ofTranslate(w-(w*gfxPaddingX), y+h-(logo.getHeight()*scale)-((person.getHeight()*scale)/2));
     
-    // create an iterator that points to the first element
-    vector<string>::iterator it = visitors.begin();
-    
-    // loop through, increasing to next element until the end is reached
-    for(; it != visitors.end(); ++it){
-        // draw the people icons
-        ofTranslate(-(person.getWidth()*scale), 0);
-        
-        // scale the icon to the right size
-        ofPushMatrix();
-        ofScale(scale, scale);
-        person.draw();
-        ofPopMatrix();
-        
-        ofTranslate(-5, 0);
-    }
-    
-    if (isVisitorAnimating) {
-        // nudge up a little and draw the string
-        ofTranslate((person.getWidth()*scale)/2+5, -50);
-        ofDrawBitmapStringHighlight("Citizen #" + visitors.back() + " detected", -110, 0, orange);
-        
+    if (isSequenceAutomatic) {
+        // just draw a circle
         ofPushStyle();
-        ofSetColor(orange);
-        ofDrawLine(0, 0, 0, 50);
+        ofSetColor(255,255,255);
+        ofDrawCircle(0, 0, 100);
         ofPopStyle();
+        
+    } else {
+        // draw the people
+        // create an iterator that points to the first element
+        vector<string>::iterator it = visitors.begin();
+        
+        // loop through, increasing to next element until the end is reached
+        for(; it != visitors.end(); ++it){
+            // draw the people icons
+            ofTranslate(-(person.getWidth()*scale), 0);
+            
+            // scale the icon to the right size
+            ofPushMatrix();
+            ofScale(scale, scale);
+            person.draw();
+            ofPopMatrix();
+            
+            ofTranslate(-5, 0);
+        }
+        
+        if (isVisitorAnimating) {
+            // nudge up a little and draw the string
+            ofTranslate((person.getWidth()*scale)/2+5, -50);
+            ofDrawBitmapStringHighlight("Citizen #" + visitors.back() + " detected", -110, 0, orange);
+            
+            ofPushStyle();
+            ofSetColor(orange);
+            ofDrawLine(0, 0, 0, 50);
+            ofPopStyle();
+        }
     }
-    
     
     ofPopMatrix();
     
@@ -347,6 +375,7 @@ void ofApp::addVisitor(){
             // play the first video in the sequence
             playVideo(sequence[sequenceIndex]);
             
+            isSequenceAutomatic = false;
             isSequencePlaying = true;
         }
         else {
